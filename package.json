@@ -1,0 +1,9 @@
+{
+  "name": "tuzlaconta-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tuzla Conta & Sızdırmazlık — statik web sitesi",
+  "dependencies": {
+    "nodemailer": "^6.9.14"
+  }
+}

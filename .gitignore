@@ -1,0 +1,27 @@
+# --- GİZLİ: asla yayınlanmamalı ---
+site/api/_config.php
+.env
+.env.*
+
+# PHP uç noktası Vercel'de çalışmıyor; yerini api/teklif-gonder.js aldı.
+# Başka bir (cPanel/PHP) hosting'e geçilirse yerelden geri alınabilir.
+site/api/
+
+# --- büyük kaynak medya (repoya girmez, yerelde durur) ---
+*.mov
+125324-733037679.mp4
+precision_turntable_*.mp4
+site/data/master/
+site/assets/video/hero-2k.mp4
+site/assets/video/hero-4k.mp4
+site/assets/video/hero.mp4
+
+# --- üretim/işletim artıkları ---
+node_modules/
+.vercel
+.DS_Store
+**/.DS_Store
+__pycache__/
+*.pyc
+IMG_*.PNG
+*.pdf

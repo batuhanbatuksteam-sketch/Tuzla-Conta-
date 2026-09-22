@@ -25,3 +25,4 @@ __pycache__/
 *.pyc
 IMG_*.PNG
 *.pdf
+.env*

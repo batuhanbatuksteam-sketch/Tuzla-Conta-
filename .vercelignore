@@ -1,1 +1,24 @@
+# Yayına yalnızca site/ (ve kökteki api/, vercel.json) gider.
+# Yerelde duran kaynak medya ve üretim dosyaları yüklenmez.
+
 site/data/
+site/api/
+
+# kaynak/ham medya — yalnızca yerelde
+*.mov
+*.pdf
+*.PNG
+125324-733037679.mp4
+precision_turntable_clean.mp4
+precision_turntable_product.mp4
+precision_turntable_4k120_master.mp4
+precision_turntable_4k120_web.mp4
+
+# kare dizisine geçtikten sonra kullanılmayan hero videoları
+site/assets/video/hero.mp4
+site/assets/video/hero-2k.mp4
+site/assets/video/hero-4k.mp4
+
+.git/
+node_modules/
+.DS_Store

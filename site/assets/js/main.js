@@ -291,7 +291,8 @@
       var alan = {
         ad: d.get("ad") || "", firma: d.get("firma") || "", tel: d.get("tel") || "",
         urun: d.get("urun") || "", olcu: d.get("olcu") || "",
-        aciliyet: d.get("aciliyet") || "", not: d.get("not") || ""
+        aciliyet: d.get("aciliyet") || "", not: d.get("not") || "",
+        website: d.get("website") || ""   // bot tuzağı; insan kullanıcıda hep boş
       };
       var satir = [
         "Teklif talebi — tuzlaconta.com",

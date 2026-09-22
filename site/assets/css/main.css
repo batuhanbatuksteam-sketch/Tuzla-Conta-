@@ -342,6 +342,10 @@ button{font:inherit;color:inherit}
 }
 .stage__item.on .stage__desc{max-height:210px;opacity:1;padding-bottom:20px}
 .stage__desc p{margin:0 0 12px;max-width:48ch;color:var(--t-on-dark-mute);font-size:.96rem}
+/* Masaüstünde görsel sağdaki sabit çerçevede duruyor; mobilde orası kapanıp
+   görsel açılan sekmenin kendi içine giriyor — dokunulan yer neyse cevabı
+   orada, kart gibi. */
+.stage__shot{display:none}
 .stage__more{font-size:.88rem;font-weight:600;color:var(--seal);text-decoration:none;
   border-bottom:1px solid currentColor;padding-bottom:2px}
 .stage__viewport{position:sticky;top:96px;aspect-ratio:4/3;overflow:hidden;background:var(--ink-2)}
@@ -354,7 +358,13 @@ button{font:inherit;color:inherit}
   font-size:.86rem;color:#E8ECF2}
 @media(max-width:900px){
   .stage__grid{grid-template-columns:1fr}
-  .stage__viewport{position:relative;top:0;order:-1;aspect-ratio:16/10;margin-bottom:20px}
+  .stage__viewport{display:none}
+  /* height:auto şart — HTML'deki height="900" özniteliği yoksa aspect-ratio
+     devreye girmiyor ve görsel 900px boyunda geriliyor */
+  .stage__shot{display:block;width:100%;height:auto;aspect-ratio:16/10;
+    object-fit:cover;border-radius:6px;margin:0 0 14px}
+  /* görsel de içeride olduğu için açılan alan daha uzun */
+  .stage__item.on .stage__desc{max-height:min(78vh,620px)}
 }
 
 /* ================================================================ UYGULAMA ŞERİDİ */
@@ -412,6 +422,14 @@ button{font:inherit;color:inherit}
   border-radius:2px;font-size:.95rem;
 }
 .form__ok[hidden]{display:none!important}
+.form__err{
+  padding:16px 18px;border:1px solid #C2564E;background:rgba(194,86,78,.12);
+  border-radius:2px;font-size:.95rem;
+}
+.form__err[hidden]{display:none!important}
+.form__err a{font-weight:600}
+.btn--wa svg{width:17px;height:17px;flex:none}
+.btn[disabled]{opacity:.6;cursor:default}
 /* bot tuzağı: ekranda ve ekran okuyucuda görünmez, ama otomatik botlar doldurur */
 .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 .contact-list{margin:0;padding:0;list-style:none;display:grid;gap:2px}

@@ -137,7 +137,13 @@
         if (shown < 0) cv.classList.add("on");
         shown = i;
       };
-      addEventListener("resize", function () { if (fit()) paint(shown < 0 ? 0 : shown); });
+      var refit = function () { if (fit()) paint(shown < 0 ? 0 : shown); };
+      addEventListener("resize", refit);
+      addEventListener("orientationchange", refit);
+      // Mobilde ilk boyama, açılış perdesi hâlâ üstteyken ve adres çubuğu
+      // yüksekliği oturmadan yapılıyordu; kare doğru ölçülmeyip geriliyordu.
+      // ResizeObserver kutunun gerçekten değiştiği her anı yakalar.
+      if ("ResizeObserver" in window) new ResizeObserver(refit).observe(cv);
       fit();
     }
 
@@ -282,44 +288,65 @@
     els.forEach(function (e) { io.observe(e); });
   }
 
-  /* ---------------------------------------------------------- 6. TEKLİF */
+  /* ---------------------------------------------------------- 6. TEKLİF
+     Asıl kanal e-posta: talep info@ kutusuna düşer ve kullanıcı gönderimin
+     gerçekten başarılı olduğunu görür. WhatsApp ikinci bir seçenek olarak
+     durur — mail gidemezse de yol açık kalsın. */
   function quote() {
     var f = $("#quoteForm"); if (!f) return;
-    f.addEventListener("submit", function (e) {
-      e.preventDefault();
+    var btn = $("#quoteSend"), wa = $("#quoteWa");
+    var ok = $("#quoteOk"), err = $("#quoteErr");
+
+    function topla() {
       var d = new FormData(f);
-      var alan = {
+      return {
         ad: d.get("ad") || "", firma: d.get("firma") || "", tel: d.get("tel") || "",
         urun: d.get("urun") || "", olcu: d.get("olcu") || "",
         aciliyet: d.get("aciliyet") || "", not: d.get("not") || "",
         website: d.get("website") || ""   // bot tuzağı; insan kullanıcıda hep boş
       };
-      var satir = [
+    }
+    function metin(a) {
+      return [
         "Teklif talebi — tuzlaconta.com",
-        "Ad: " + alan.ad,
-        "Firma / gemi: " + alan.firma,
-        "Telefon: " + alan.tel,
-        "Ürün: " + alan.urun,
-        "Ölçü / adet: " + alan.olcu,
-        "Aciliyet: " + alan.aciliyet,
-        "Not: " + alan.not
+        "Ad: " + a.ad, "Firma / gemi: " + a.firma, "Telefon: " + a.tel,
+        "Ürün: " + a.urun, "Ölçü / adet: " + a.olcu,
+        "Aciliyet: " + a.aciliyet, "Not: " + a.not
       ].join("\n");
+    }
+    function goster(el) {
+      [ok, err].forEach(function (x) { if (x) x.hidden = true; });
+      if (el) { el.hidden = false; el.focus(); }
+    }
 
-      // e-posta gönderimi: en iyi çaba, arka planda. Başarısız olursa
-      // WhatsApp akışı hiçbir şekilde engellenmez — kullanıcı her durumda
-      // teklifini WhatsApp üzerinden iletebilir.
-      try {
-        fetch("/api/teklif-gonder", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(alan)
-        }).catch(function () {});
-      } catch (e) {}
+    if (wa) {
+      wa.addEventListener("click", function () {
+        window.open("https://wa.me/905436183893?text=" +
+          encodeURIComponent(metin(topla())), "_blank", "noopener");
+      });
+    }
 
-      var wa = "https://wa.me/905436183893?text=" + encodeURIComponent(satir);
-      var ok = $("#quoteOk");
-      if (ok) { ok.hidden = false; ok.focus(); }
-      window.open(wa, "_blank", "noopener");
+    f.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (!f.reportValidity()) return;
+
+      var eski = btn ? btn.innerHTML : "";
+      if (btn) { btn.disabled = true; btn.textContent = "Gönderiliyor…"; }
+
+      fetch("/api/teklif-gonder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(topla())
+      })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) {
+          if (j && j.ok) { goster(ok); f.reset(); }
+          else { goster(err); }
+        })
+        .catch(function () { goster(err); })
+        .then(function () {
+          if (btn) { btn.disabled = false; btn.innerHTML = eski; }
+        });
     });
   }
 

@@ -127,7 +127,6 @@ def foot(rel=""):
     <div><h4>Malzeme ve ekipman</h4><ul>{cols2}</ul></div>
     <div><h4>İletişim</h4><ul>
       <li><a href="tel:{BRAND['phone']}">{BRAND['phone_display']}</a></li>
-      <li><a href="tel:{BRAND['phone2']}">{BRAND['phone2_display']}</a></li>
       <li><a href="mailto:{BRAND['mail']}">{BRAND['mail']}</a></li>
       <li><a href="{BRAND['maps']}" target="_blank" rel="noopener">{E(BRAND['adres'])}</a></li>
     </ul></div>
@@ -390,7 +389,6 @@ def quote_block(rel=""):
           sadece pompanın markası olsun yeter. Doğru malzemeyi biz bulalım.</p>
         <ul class="contact-list" style="margin-top:clamp(28px,3vw,44px)">
           <li><span class="k">Telefon</span><a class="v" href="tel:{BRAND['phone']}">{BRAND['phone_display']}</a></li>
-          <li><span class="k">İkinci hat</span><a class="v" href="tel:{BRAND['phone2']}">{BRAND['phone2_display']}</a></li>
           <li><span class="k">E-posta</span><a class="v" href="mailto:{BRAND['mail']}">{BRAND['mail']}</a></li>
           <li><span class="k">Adres</span><a class="v" href="{BRAND['maps']}" target="_blank" rel="noopener">{E(BRAND['adres'])}</a></li>
         </ul>
@@ -435,7 +433,7 @@ def quote_block(rel=""):
         <p class="form__ok" id="quoteOk" hidden tabindex="-1">Teklif talebiniz iletildi.
           En kısa sürede size dönüş yapacağız.</p>
         <p class="form__err" id="quoteErr" hidden tabindex="-1">Talep gönderilemedi.
-          Lütfen WhatsApp butonunu kullanın ya da <a href="tel:+905436183893">0543 618 38 93</a>'ü arayın.</p>
+          Lütfen WhatsApp butonunu kullanın ya da <a href="tel:{BRAND['phone']}">{BRAND['phone_display']}</a>'ü arayın.</p>
       </form>
     </div>
   </div>
@@ -611,7 +609,6 @@ def page_hakkimizda():
           <tr><th scope="row">Firma</th><td>{E(BRAND['name'])}</td></tr>
           <tr><th scope="row">Adres</th><td>{E(BRAND['adres'])}</td></tr>
           <tr><th scope="row">Telefon</th><td>{BRAND['phone_display']}</td></tr>
-          <tr><th scope="row">İkinci hat</th><td>{BRAND['phone2_display']}</td></tr>
           <tr><th scope="row">E-posta</th><td>{BRAND['mail']}</td></tr>
           <tr><th scope="row">Ürün grubu</th><td>12 grup, 51 kalem</td></tr>
           <tr><th scope="row">Çalışma saatleri</th><td>Hafta içi 08:30 – 18:30<br>Cumartesi 09:00 – 15:00</td></tr>

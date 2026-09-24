@@ -321,7 +321,7 @@
 
     if (wa) {
       wa.addEventListener("click", function () {
-        window.open("https://wa.me/905436183893?text=" +
+        window.open("https://wa.me/905425962823?text=" +
           encodeURIComponent(metin(topla())), "_blank", "noopener");
       });
     }

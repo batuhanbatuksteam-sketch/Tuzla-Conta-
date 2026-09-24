@@ -7,10 +7,8 @@ mertin.com.tr ürün ağacı ve sektör standartları (EN 1092-1, ASME B16.20, D
 BRAND = {
     "name": "Tuzla Conta & Sızdırmazlık",
     "short": "Tuzla Conta",
-    "phone_display": "0543 618 38 93",
-    "phone": "+905436183893",
-    "phone2_display": "0542 596 28 23",
-    "phone2": "+905425962823",
+    "phone_display": "0542 596 28 23",
+    "phone": "+905425962823",
     "mail": "info@tuzlaconta.com",
     "web": "tuzlaconta.com",
     "adres": "İstasyon Mah. Suyolu Sk. No:3/A, 34940 Tuzla / İstanbul",

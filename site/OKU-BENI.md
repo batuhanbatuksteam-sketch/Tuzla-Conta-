@@ -8,10 +8,11 @@ herhangi bir hosting'e (Netlify, Vercel, cPanel, Nginx) olduğu gibi yükleyin.
 ```
 site/
 ├── index.html            ana sayfa
-├── urunler.html          tüm katalog (12 grup, 51 kalem)
+├── urunler.html          tüm katalog (14 grup, 60 kalem)
+├── kaucuk-silikon.html   kauçuk & silikon özel üretim sayfası
 ├── hakkimizda.html
 ├── iletisim.html
-├── urun/<slug>.html      51 ürün sayfası — elle düzenlenmez, üretilir
+├── urun/<slug>.html      60 ürün sayfası — elle düzenlenmez, üretilir
 ├── sitemap.xml, robots.txt
 ├── api/
 │   ├── teklif-gonder.php teklif formunu e-postaya gönderir (SMTP, PHP)
@@ -22,9 +23,9 @@ site/
 │   ├── js/main.js        açılış, hero scroll, katalog sahnesi, tema, imleç
 │   ├── img/logo.svg      dikey logo (orijinal kilit)
 │   ├── img/logo-mark.svg TC monogramı
-│   ├── img/urun/         51 ürün çekimi (webp)
-│   ├── img/sahne/        19 ortam/kategori görseli + 2 video posteri (webp)
-│   ├── img/hero-seq/     hero kare dizisi: d001–d154 (masaüstü), m001–m077 (mobil)
+│   ├── img/urun/         60 ürün çekimi (webp)
+│   ├── img/sahne/        kategori, kullanım alanı ve kurumsal görseller (webp)
+│   ├── img/hero-seq/     hero kare dizisi: d001–d183 (masaüstü), m001–m122 (dikey telefon)
 │   └── video/            isin-ozu-bg.mp4 ("İşin özü" arka planı)
 │                         hero*.mp4 artık kullanılmıyor — silinebilir
 └── data/                 KAYNAK — siteyle birlikte yayına ÇIKMAZ
@@ -32,8 +33,12 @@ site/
     ├── build.py          sayfaları üretir
     ├── genimg.py         ürün görseli üretimi (Replicate)
     ├── genscene.py       ortam görseli üretimi (Replicate)
-    ├── genhero.py        hero videosu üretimi (Replicate)
-    └── master/           2K ve 4K asıllar (arşiv)
+    ├── genurun2.py       Eylül 2026 yeni/yenilenen ürün görselleri (referanslı)
+    ├── genscene2.py      Eylül 2026 temiz fabrika sahneleri
+    ├── genhero2.py       hero v2: başlangıç karesi + LTX-2.3 video
+    ├── herokare.py       4K120 asıldan web kare dizisini çıkarır
+    ├── olcu-din2576.jpg  müşterinin verdiği PN16 ölçü tablosu (build.py'de DIN2576)
+    └── master/           2K ve 4K asıllar, ham ürün/sahne jpg'leri (arşiv, git'e girmez)
 ```
 
 ## İçerik nasıl değiştirilir
@@ -45,7 +50,7 @@ site/
 cd site/data && python3 build.py
 ```
 
-55 sayfa yeniden yazılır. Yeni ürün eklemek için aynı dosyada `add(...)` bloğu
+65 sayfa yeniden yazılır; katalogdan çıkarılan ürünün sayfası ve görseli de silinir. Yeni ürün eklemek için aynı dosyada `add(...)` bloğu
 kopyalayıp doldurun; kategori, ürün sayfası, katalog listesi ve sitemap kendiliğinden oluşur.
 
 ## Tasarım sistemi
@@ -74,20 +79,30 @@ sattığınız işin kendisi. Ardından "TUZLA CONTA" yazısı soldan açılır,
 üst bardaki yuvasına uçar (FLIP), açık perde yukarı sıyrılıp hero'yu açar.
 Aynı oturumda ikinci kez girildiğinde bekleme süresi kısalır (`sessionStorage`).
 
-**Hero.** Scroll bir videoyu değil, bir **kare dizisini** sürer. Kaynak,
-precision-turntable çekimidir (Real-ESRGAN ile büyütülüp RIFE ile 24fps'ten
-120fps'e ara-kare üretildi, 616 kare). Yayına giden hâli `assets/img/hero-seq/`
-içindeki webp kareleridir: masaüstü için `d001…d154` (1600px, ~3.6 MB toplam),
-mobil/veri tasarrufu için `m001…m077` (900px, ~0.9 MB). `main.js` → `hero()`
-kareleri sırayla arkadan indirir ve scroll oranına düşen kareyi canvas'a çizer.
+**Hero.** Scroll bir videoyu değil, bir **kare dizisini** sürer. İçerik: en çok satan
+ürünlerden (köşe lastikleri, kedi yüzü / 3S / lip seal profilleri, mekanik salmastralar,
+spiral ve klingrit contalar, o-ringler, silikon profiller) kurulu, siyah boşlukta süzülen
+bir spiral; kamera spiralin içine doğru ilerler.
+
+Üretim zinciri (`data/genhero2.py`, `~/tools/video-ai/pipeline_hero2.sh`, `data/herokare.py`):
+1. `nano-banana-2` ile başlangıç karesi — güncel ürün görselleri referans verilerek ($0.10)
+2. `lightricks/ltx-2.3-pro`, image_to_video, **2K (2560×1440), 6 sn, 50 fps**, dolly_in ($0.96)
+3. RIFE v4.6 ile 50 → **120 fps** (732 kare), Real-ESRGAN (realesr-animevideov3 ×2) ile
+   5120×2880, Lanczos ile **3840×2160** → `data/master/hero2-4k120-master.mp4`
+4. Web kareleri: masaüstü `d001…d183` (1920px, her 4. kare, ~6.9 MB), dikey telefon
+   `m001…m122` (720×1280, spiral merkezine göre kırpılmış, her 6. kare, ~2.7 MB)
+
+`main.js` → `hero()` scroll oranını doğrudan kareye çevirmez: gösterilen oran hedefe
+kare hızından bağımsız bir yayla yaklaşır ve kare konumu kesirlidir — 12.4. konumda
+12. kare tam, 13. kare %40 opaklıkla üstüne çizilir. Böylece 120 Hz ekranda saniyede
+120 ara görüntü çizilir; kare sayısı düşük tutulup hareket basamaksız kalır.
+Kare sayıları `build.py` tarafından klasörden okunur, HTML'e elle yazılmaz.
 
 Neden video değil: `video.currentTime` ile kare sürmek sunucunun HTTP **Range**
 (206 Partial Content) desteğine, codec'e ve tarayıcının seek/autoplay
-politikasına bağlıdır. Bunlardan biri eksik olduğunda — örneğin `python3 -m
-http.server` gibi Range desteklemeyen bir sunucuda — tarayıcı `seekable`
+politikasına bağlıdır. Bunlardan biri eksik olduğunda tarayıcı `seekable`
 aralığını `[0,0]` verir, atanan `currentTime` sessizce 0'a döner ve **kare hiç
-değişmez**. Kare dizisi bunların hiçbirine bağlı değil; her karе sıradan bir
-görseldir, her ortamda aynı çalışır. Kaydırma mesafesi 190vh (mobilde 165vh).
+değişmez**. Kare dizisi bunların hiçbirine bağlı değil. Kaydırma mesafesi 190vh (mobilde 165vh).
 
 Eski `assets/video/hero*.mp4` dosyaları artık kullanılmıyor, silinebilir.
 
@@ -120,52 +135,56 @@ Bunların dışında hareket bilinçli olarak yok.
 
 ## Teklif formu
 
-İki kanal birden çalışır:
+Site Vercel'de; form `/api/teklif-gonder`'e (kökteki `api/teklif-gonder.js`) istek atar,
+o da `info@tuzlaconta.com`'a mail gönderir. WhatsApp butonu sunucudan bağımsız, her zaman çalışır.
 
-1. **WhatsApp (garantili).** Girilen bilgilerle hazırlanmış mesaj WhatsApp'ta
-   açılır (`0543 618 38 93`). Müşteri göndermeden önce düzenleyebilir. Bu yol
-   hiçbir sunucuya bağlı değildir, her zaman çalışır.
-2. **E-posta (en iyi çaba).** Aynı anda `api/teklif-gonder.php`'ye sessizce bir
-   istek gider; bu betik `ahmet.kurtoglu@tuzlaconta.com` üzerinden ham SMTP ile
-   (Composer/PHPMailer gerekmez) `info@tuzlaconta.com`'a mail atar. Başarısız
-   olursa WhatsApp akışını hiçbir şekilde etkilemez — sessizce loglanır
-   (`error_log`), kullanıcı fark etmez.
+Canlıda (Eylül 2026) uç nokta ayakta ve origin kontrolünü geçiyor; mailin gitmemesi
+gönderim adımında: parolalı SMTP (SMTP AUTH) Microsoft 365 kiracılarında çoğunlukla
+kapalıdır ve Microsoft **Aralık 2026 sonunda** varsayılan olarak kapatıyor. Bu yüzden
+uç noktaya **Microsoft Graph** yolu eklendi; SMTP yalnızca yedek.
 
-**Neden Office 365?** `dig MX tuzlaconta.com` şu anda
-`tuzlaconta-com.mail.protection.outlook.com`'u gösteriyor; alan adı tamamen
-Microsoft 365 tarafından yönetiliyor (`NameSpaceType: Managed`, cPanel maili
-değil). Bu yüzden `api/_config.php` içinde SMTP sunucusu `smtp.office365.com:587`
-olarak ayarlandı, STARTTLS + AUTH LOGIN ile bağlanıyor.
+Vercel → Project → Settings → Environment Variables:
 
-**Test edilmedi — canlıya almadan önce mutlaka deneyin.** Bu betiği yazan ortam,
-gerçek şifre içeren bir komutu güvenlik sınıflandırıcısı gereği çalıştıramadı;
-yani SMTP girişinin gerçekten kabul edildiği doğrulanmadı. En olası engel:
-Microsoft 365 kiracılarında "SMTP AUTH" (temel kimlik doğrulama) artık varsayılan
-kapalı geliyor. Test ettiğinizde `535 5.7.139 ... basic authentication is
-disabled` gibi bir hata görürseniz:
+| Değişken | Değer |
+|---|---|
+| `GRAPH_TENANT_ID` | Entra ID → Genel bakış → Kiracı (tenant) kimliği |
+| `GRAPH_CLIENT_ID` | Uygulama kaydı → Uygulama (client) kimliği |
+| `GRAPH_CLIENT_SECRET` | Uygulama kaydı → Sertifikalar ve gizli anahtarlar → yeni gizli anahtar (değer) |
+| `MAIL_FROM` | gönderen kutu — gerçek bir posta kutusu olmalı (grup adresi olmaz): `ahmet.kurtoglu@tuzlaconta.com` |
+| `MAIL_TO` | teklifin düşeceği kutu (boşsa `info@tuzlaconta.com`) |
+| `KONTROL_ANAHTARI` | rastgele uzun bir metin — sağlık kontrolü için |
 
-- M365 admin panelinden (admin.microsoft.com) → Kullanıcılar → Etkin kullanıcılar →
-  `ahmet.kurtoglu@tuzlaconta.com` → Posta → "İzinleri yönet" → **SMTP AUTH'u aç**.
-- Kiracı genelinde kapalıysa Exchange Admin Center → Posta akışı → Kimlik
-  doğrulama ilkeleri üzerinden bu kutuya özel bir istisna eklenmesi gerekir.
-- Uzun vadede SMTP AUTH yerine Microsoft Graph API (OAuth2, `Mail.Send` izni)
-  kullanmak daha sağlam bir çözümdür; SMTP AUTH herhangi bir noktada kiracı
-  genelinde tamamen kapatılabilir.
+Uygulama kaydı: entra.microsoft.com → Uygulama kayıtları → Yeni kayıt → API izinleri →
+Microsoft Graph → **Uygulama izinleri** → `Mail.Send` → "Yönetici onayı ver".
+(İsteğe bağlı sıkılaştırma: Exchange'de uygulamanın yalnızca `MAIL_FROM` kutusundan
+gönderebilmesi için RBAC for Applications / Application Access Policy.)
 
-Test etmek için: siteyi hosting'e yükleyin, formu bir kez gerçek bilgiyle
-gönderin, `info@tuzlaconta.com` kutusuna (ve spam klasörüne) bakın. `api/`
-klasörüne PHP hata logu erişiminiz varsa `mail_gonderilemedi` dönerse log'daki
-`[teklif-gonder] SMTP hata:` satırı tam nedeni söyler.
+Değişkenler girilip yeniden deploy edildikten sonra, **mail göndermeden** test:
 
-**Güvenlik — şifreyi değiştirin.** `ahmet.kurtoglu@tuzlaconta.com` şifresi bu
-görüşmede WhatsApp ekran görüntüsüyle paylaşıldı ve artık `api/_config.php`
-içinde düz metin olarak duruyor (PHP dosyaları sunucu tarafında çalıştığı için
-bu normal/yaygın bir pratiktir — dosya tarayıcıya asla gönderilmez, `.htaccess`
-da `_` ile başlayan dosyalara erişimi ayrıca reddeder). Yine de bu şifre bir
-mesajlaşma uygulamasından geçtiği için M365 admin panelinden **değiştirilmesi**
-ve `_config.php`'nin yeni şifreyle güncellenmesi önerilir. Barındırma sağlayıcı
-değişirse veya PHP desteklenmiyorsa, aynı `quote()` fonksiyonunu (`assets/js/main.js`)
-Formspree/Netlify Forms gibi bir servise bağlamak da bir alternatiftir.
+```
+https://www.tuzlaconta.com/api/teklif-gonder?kontrol=<KONTROL_ANAHTARI>
+```
+
+`{"ok":true,"yol":"graph","token":"alındı"}` dönerse yapılandırma tamam; hata varsa
+`hata` alanı hangi adımda takıldığını söyler. Ardından formdan bir gerçek deneme yapın.
+
+**Mail tasarımı** (`api/_eposta.js`): lacivert başlık, aciliyet etiketi (Bugün lazım
+= kırmızı ve "yüksek önem"), istenen ürünün fotoğrafı, DIN 2576 ölçüsü seçildiyse o
+satırın beş ölçüsü, müşterinin notu, tek dokunuşla "Hemen ara / WhatsApp'tan yaz"
+butonları ve ürünün teknik tablosu. Tablo + satır içi stil ile yazıldı (Outlook masaüstü
+dahil aynı görünür); görseller webp değil jpg ve maile gömülü (CID), bu yüzden
+"görselleri indir" uyarısına takılmaz. Gönderen ve alıcı aynı kiracıda olduğu için
+mail spam filtresine girmez. Mail görselleri ve `api/_katalog.json` her `build.py`
+çalıştırmasında katalogdan yeniden üretilir.
+
+Form artık ürün bazında: ürün sayfasındaki "Bu ürün için teklif iste" formu o ürün
+seçili açar (`?urun=<slug>`); ölçü tablosu olan contalarda "Standart ölçü (DN)" alanı çıkar.
+
+Gönderen kutu `ahmet.kurtoglu@tuzlaconta.com` (`MAIL_FROM`). `info@tuzlaconta.com`
+bir posta kutusu değil, "Tuzla Conta Bilgilendirme" grubunun adresi; Graph grup adına
+gönderemez ama gruba teslim eder. Teklifler grubun gelen kutusunda toplanır.
+
+`site/api/teklif-gonder.php` eski PHP hosting sürümüdür; Vercel'de kullanılmaz.
 
 ## Alan adı ve barındırma (DNS)
 
@@ -196,10 +215,16 @@ Kaynak modeller ve maliyet:
 | İş | Model | Adet | Tutar |
 |---|---|---|---|
 | Ürün + ortam görselleri | `google/nano-banana-2` (2K) | 87 üretim | ≈ $8.79 |
-| Hero videosu | `kwaivgi/kling-v3-video` (mode `4k`, 16:9, 5 sn) | 1 | $2.10 |
+| Hero videosu (v1, artık kullanılmıyor) | `kwaivgi/kling-v3-video` (mode `4k`, 16:9, 5 sn) | 1 | $2.10 |
+| **Eylül 2026 revizyonu** | | | |
+| Yeni/yenilenen ürün görselleri + rötuş | `google/nano-banana-2` (2K) | ~21 | ≈ $2.1 |
+| Temiz fabrika sahneleri (14 kategori, 4 sektör, kurumsal) | `google/nano-banana-2` (2K) | ~23 | ≈ $2.3 |
+| Hero v2 başlangıç karesi + video | `nano-banana-2` + `lightricks/ltx-2.3-pro` (2K, 6 sn) | 2 | ≈ $1.06 |
 
-Video 3856×2148 olarak üretildi; asıl dosya `data/master/hero-4k-master.mp4`
-içinde duruyor. Yayına giden sürümler bundan küçültüldü.
+Softbox sızıntısı: model bazen sol üst köşeye ışık paneli koyuyor. Piksel maskesiyle
+harmanlama ince kenar çizgisini bırakıyor ve ürün köşeye taşıyorsa ürünü de yiyor;
+bunun yerine `genimg.retouch()` görseli modele "paneli sil, başka hiçbir şeyi değiştirme"
+talimatıyla geri veriyor ($0.10). `genimg.leaks()` sızıntılı kareleri bulur.
 
 Görselleri yeniden üretmek için:
 

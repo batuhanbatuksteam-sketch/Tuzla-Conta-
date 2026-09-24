@@ -47,12 +47,59 @@ CATS = {s: (n, d, sc) for s, n, d, sc in CATEGORIES}
 BY_CAT = {s: [p for p in P if p["kat"] == s] for s in CATS}
 BY_SLUG = {p["slug"]: p for p in P}
 E = lambda t: html.escape(str(t), quote=True)
+NK, NP = len(CATS), len(P)   # grup ve kalem sayısı — metinlerde elle yazılmaz
 
 LOGO = open(os.path.join(ROOT, "assets", "img", "logo.svg"), encoding="utf-8").read()
 MARK = open(os.path.join(ROOT, "assets", "img", "logo-mark.svg"), encoding="utf-8").read()
 BRANDLOCK = (f'<span class="brand">{MARK}'
              '<span class="brand__t"><span class="brand__n">TUZLA CONTA</span>'
              '<span class="brand__s">SIZDIRMAZLIK</span></span></span>')
+
+# Müşterinin gönderdiği "PN 16 DÜZ FLANŞ DIN:2576" tablosu. Contalar grubunda
+# eşanjör ve özel ölçü hariç tüm ürünlerde gösterilir (catalog.py -> olcu="din2576").
+# Sütunlar: DN, iç çap, dış çap, delik merkezi, delik çapı, delik adedi (mm).
+DIN2576 = [
+ (15,"22","95","65","14",4),(20,"27,5","105","75","14",4),(25,"34,5","115","85","14",4),
+ (32,"43,5","140","100","18",4),(40,"49,5","150","110","18",4),(50,"61,5","165","125","18",4),
+ (65,"77,5","185","145","18",4),(80,"90,5","200","160","18",8),(100,"116","220","180","18",8),
+ (125,"141,5","250","210","18",8),(150,"170,5","285","240","22",8),(200,"221,5","340","295","22",12),
+ (250,"276,5","405","355","26",12),(300,"327,5","460","410","26",12),(350,"359","520","470","26",16),
+ (400,"411","580","525","30",16),(450,"462","640","585","30",20),(500,"513,5","715","650","33",20),
+ (550,"564","745","680","33",20),(600,"616,5","840","770","36",20),(650,"665","875","805","36",24),
+ (700,"718","910","840","36",24),(750,"766","967","895","39",24),(800,"819","1025","950","39",24),
+ (900,"920","1125","1050","39",28),(1000,"1022","1255","1170","42",28),(1100,"1123","1355","1270","42",32),
+ (1200,"1225","1485","1390","48",32),(1300,"1326","1585","1490","48",32),(1400,"1426","1685","1590","48",36),
+ (1500,"1530","1820","1710","56",36),(1600,"1626","1930","1820","56",40),(1800,"1826","2130","2020","56",44),
+ (2000,"2026","2345","2230","62",48),
+]
+
+
+def olcu_table(p):
+    if p.get("olcu") != "din2576":
+        return ""
+    rows = "".join(f'<tr><th scope="row">DN {dn}</th><td>{ic}</td><td>{dis}</td><td>{dm}</td><td>{dc}</td><td>{n}</td></tr>'
+                   for dn, ic, dis, dm, dc, n in DIN2576)
+    return f"""<section class="band band--tight" id="olculer">
+  <div class="wrap">
+    <div class="seam"><span class="tag">Standart ölçüler</span></div>
+    <div class="olcu">
+      <div class="olcu__head">
+        <h2 class="d3">PN 16 düz flanş ölçüleri<br>DIN 2576</h2>
+        <p>{E(p['ad'])} bu tablodaki flanş ölçülerinde standart olarak kesilir. Ölçüler milimetredir.
+          Tabloda olmayan ölçüler ve farklı basınç sınıfları için numune veya çizim gönderin.</p>
+        <a class="btn btn--ghost" href="../iletisim.html?urun={p['slug']}#teklif">Ölçü ile teklif iste</a>
+      </div>
+      <div class="olcu__scroll" tabindex="0" role="region" aria-label="DIN 2576 PN16 ölçü tablosu">
+        <table class="olcu__t">
+          <thead><tr><th scope="col">Anma çapı</th><th scope="col">İç çap</th><th scope="col">Dış çap</th>
+            <th scope="col">Delik merkezi</th><th scope="col">Delik çapı</th><th scope="col">Delik adedi</th></tr></thead>
+          <tbody>{rows}</tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>"""
+
 
 # ---------------------------------------------------------------- iskelet
 THEME_INIT = ("<script>(function(){try{"
@@ -97,6 +144,7 @@ def nav(rel="", here=""):
   <button class="nav__burger" type="button" aria-label="Menüyü aç" aria-expanded="false" aria-controls="navMenu"><span></span></button>
   <nav class="nav__menu" id="navMenu" aria-label="Ana menü">
     {a('urunler.html','Ürünler','urunler')}
+    {a('kaucuk-silikon.html','Kauçuk &amp; Silikon','kaucuk')}
     {a('hakkimizda.html','Hakkımızda','hakkimizda')}
     {a('iletisim.html','İletişim','iletisim')}
     <a class="nav__tel" href="tel:{BRAND['phone']}">{BRAND['phone_display']}</a>
@@ -112,19 +160,19 @@ def nav(rel="", here=""):
 
 def foot(rel=""):
     cols = "".join(
-        f'<li><a href="{rel}urunler.html#{s}">{E(CATS[s][0])}</a></li>' for s in list(CATS)[:6])
+        f'<li><a href="{rel}urunler.html#{s}">{E(CATS[s][0])}</a></li>' for s in list(CATS)[:7])
     cols2 = "".join(
-        f'<li><a href="{rel}urunler.html#{s}">{E(CATS[s][0])}</a></li>' for s in list(CATS)[6:])
+        f'<li><a href="{rel}urunler.html#{s}">{E(CATS[s][0])}</a></li>' for s in list(CATS)[7:])
     return f"""<footer class="foot">
 <div class="wrap">
   <div class="foot__top">
     <div>
       <div class="foot__logo">{BRANDLOCK}</div>
-      <p class="foot__blurb">Tuzla'da, tersane hattının içinde. Gemilere ve sanayi tesislerine
-        conta, salmastra ve sızdırmazlık elemanları.</p>
+      <p class="foot__blurb">Fabrikalara, üretim tesislerine ve gemilere conta, salmastra,
+        kauçuk ve silikon sızdırmazlık ürünleri. Standart ölçü stoktan, özel ölçü üretimden.</p>
     </div>
     <div><h4>Sızdırmazlık</h4><ul>{cols}</ul></div>
-    <div><h4>Malzeme ve ekipman</h4><ul>{cols2}</ul></div>
+    <div><h4>Malzeme ve özel üretim</h4><ul>{cols2}</ul></div>
     <div><h4>İletişim</h4><ul>
       <li><a href="tel:{BRAND['phone']}">{BRAND['phone_display']}</a></li>
       <li><a href="mailto:{BRAND['mail']}">{BRAND['mail']}</a></li>
@@ -220,6 +268,22 @@ DIAGRAM = """<svg class="joint" viewBox="0 0 660 440" role="img"
 
 
 # ---------------------------------------------------------------- ana sayfa
+def seq_count(prefix):
+    d = os.path.join(ROOT, "assets", "img", "hero-seq")
+    return len([f for f in os.listdir(d) if f.startswith(prefix) and f.endswith(".webp")]) if os.path.isdir(d) else 0
+
+
+# Müşterinin ana sayfada görmek istediği üretim kabiliyeti (ChatGPT önerisi üzerinden
+# birlikte netleştirdiği liste). "Her türlü kauçuk ürünü üretiriz" gibi sınırsız bir
+# iddia yerine, neyin yapıldığını tek tek sayan teknik bir dil.
+KABILIYET = ["Kauçuk contalar", "Silikon contalar", "Kalıplı kauçuk parçalar",
+             "Özel ölçü ve formda ürünler", "Kauçuk-metal birleşimli parçalar", "Özel profil ve şeritler",
+             "Müşteri çizimine göre üretim", "Numune üzerinden üretim", "Prototip ve seri üretim"]
+MALZEME = ["EPDM", "NBR", "Viton (FKM)", "Silikon", "Neopren", "Doğal kauçuk"]
+KAUCUK_LEDE = ("Standart ürünlerin yanı sıra, ihtiyaca özel ölçü, formülasyon ve teknik gereksinimlere göre "
+               "kauçuk ve silikon bazlı contalar, profiller, kalıplı parçalar ve özel sızdırmazlık ürünleri üretiyoruz.")
+
+
 def page_index():
     stage_items, stage_shots = [], []
     for i, s in enumerate(CATS):
@@ -241,13 +305,13 @@ def page_index():
             f'alt="{E(name)} kullanım ortamı" loading="lazy" width="1200" height="900">')
 
     scenes = [
-        ("uyg-tersane", "Tersaneler ve gemiler",
-         "Ambar kapak profilleri, köşe parçaları, güverte ekipmanları ve klas gerektiren sızdırmazlık hatları."),
-        ("uyg-makine-dairesi", "Makine daireleri",
-         "Ana makine, yardımcı makine, yakıt ve yağlama hatlarının conta ve salmastraları."),
+        ("uyg-fabrika", "Fabrikalar ve üretim hatları",
+         "Makine, hat ve ekipman sızdırmazlığı; kalıplı kauçuk parçalar, profiller ve bakım stoğu."),
+        ("uyg-gida", "Gıda, içecek ve kimya",
+         "Silikon ve EPDM contalar, PTFE ve Viton çözümleri; hijyen ve kimyasal dayanımı gereken hatlar."),
         ("uyg-pompa", "Pompa ve vana hatları",
          "Mekanik salmastra, yumuşak salmastra ve flanş contalarıyla duran pompayı tekrar çalıştırmak."),
-        ("uyg-esanjor", "Eşanjör ve proses",
+        ("uyg-esanjor", "Enerji ve proses tesisleri",
          "Plaka eşanjör contaları, yüksek sıcaklık contaları ve kimyasala dayanıklı malzemeler."),
     ]
     scene_html = "".join(f"""<a class="scene" href="urunler.html">
@@ -256,10 +320,10 @@ def page_index():
 </a>""" for k, t, d in scenes)
 
     facts = [
-        ("Aynı gün", "Stoktaki ürünler için Tuzla ve tersane bölgesine aynı gün sevkiyat."),
+        ("Aynı gün", "Stoktaki ürünlerde aynı gün sevkiyat; olmayan ölçü aynı gün kesilir."),
         ("1 adet", "Minimum sipariş yok. Tek parça conta da kesiyoruz."),
-        ("51", "kalem ürün, 12 grup. Hepsi tek tedarikçiden."),
-        ("IACS", "Ambar kapak ürünleri klas kuruluşu standartlarına göre üretilir."),
+        (str(NP), f"kalem ürün, {NK} grup. Hepsi tek tedarikçiden."),
+        ("Özel", "Kauçuk ve silikon parçalar numuneden, çizimden veya ölçüden üretilir."),
     ]
     fact_html = "".join(
         f'<div class="fact"><div class="fact__n num">{E(n)}</div><p class="fact__l">{E(l)}</p></div>'
@@ -277,9 +341,12 @@ def page_index():
     ]
     gap_html = "".join(f"<li><b>{E(t)}</b><span>{E(d)}</span></li>" for t, d in gap_items)
 
-    return f"""{head(BRAND['name'] + " — Gemi ve sanayi sızdırmazlık ürünleri | Tuzla, İstanbul",
-       "Tuzla'da conta, mekanik salmastra, o-ring, keçe, kaplin lastiği, flanş ve ambar kapak lastiği. "
-       "Numuneden kesim, aynı gün sevkiyat. 12 ürün grubunda 51 kalem.", cls="is-locked", canon="")}
+    kab_html = "".join(f"<li>{E(k)}</li>" for k in KABILIYET)
+    mal_html = "".join(f"<span>{E(m)}</span>" for m in MALZEME)
+    nd, nm = seq_count("d"), seq_count("m")
+    return f"""{head(BRAND['name'] + " — Conta, salmastra, kauçuk ve silikon sızdırmazlık ürünleri",
+       "Conta, mekanik salmastra, o-ring, keçe, ambar kapak lastiği; numuneden ve çizimden kauçuk ve silikon "
+       f"özel üretim. Aynı gün sevkiyat. {NK} ürün grubunda {NP} kalem.", cls="is-locked", canon="")}
 {loader()}
 {nav(here="home")}
 <main id="main">
@@ -289,27 +356,63 @@ def page_index():
     <div class="hero__media">
       <img src="assets/img/sahne/hero-frame.webp" alt="" aria-hidden="true">
       <canvas id="heroCanvas" aria-hidden="true"
-              data-seq-d="assets/img/hero-seq/d%.webp" data-n-d="154"
-              data-seq-m="assets/img/hero-seq/m%.webp" data-n-m="77"></canvas>
+              data-seq-d="assets/img/hero-seq/d%.webp" data-n-d="{nd}"
+              data-seq-m="assets/img/hero-seq/m%.webp" data-n-m="{nm}"></canvas>
     </div>
     <div class="hero__scrim"></div>
     <div class="hero__inner">
       <div id="heroH">
         <h1 class="d1 hero__h"><span class="hero__l1">Kaçak</span><span class="hero__l2" id="heroL2">burada durur.</span></h1>
-        <p class="hero__sub">Gemilere, tersanelere ve sanayi tesislerine conta, salmastra ve
-          sızdırmazlık elemanları. Ölçüyü siz verin, malzemeyi birlikte seçelim.</p>
+        <p class="hero__sub">Fabrikalara, üretim tesislerine ve gemilere conta, salmastra,
+          kauçuk ve silikon sızdırmazlık ürünleri. Ölçüyü siz verin, malzemeyi birlikte seçelim.</p>
         <div class="hero__acts">
           <a class="btn btn--solid" href="iletisim.html#teklif"><span class="btn__dot"></span>Teklif iste</a>
           <a class="btn btn--ghost" href="urunler.html">Ürünlere bak</a>
         </div>
         <div class="hero__meta">
-          <span><b>12</b> ürün grubu</span>
-          <span><b>51</b> kalem</span>
-          <span><b>Tuzla</b> İstasyon Mahallesi</span>
+          <span><b>{NK}</b> ürün grubu</span>
+          <span><b>{NP}</b> kalem</span>
+          <span><b>Kauçuk &amp; silikon</b> özel üretim</span>
         </div>
       </div>
     </div>
     <div class="hero__cue" aria-hidden="true"><span>Kaydır</span><i></i></div>
+  </div>
+</section>
+
+<section class="band kauc" id="kaucuk-silikon">
+  <div class="wrap">
+    <div class="seam"><span class="tag">Kauçuk &amp; silikon özel üretim</span></div>
+    <div class="kauc__grid">
+      <div>
+        <h2 class="d2" data-rise>Kauçuk ve silikon bazlı özel ürünlerde üretim çözümü.</h2>
+        <p class="lede kauc__lede" data-rise="60">{E(KAUCUK_LEDE)}</p>
+        <ul class="kauc__list" data-rise="100">{kab_html}</ul>
+        <div class="kauc__mat" data-rise="120"><span class="kauc__k">Malzeme</span>{mal_html}</div>
+        <div class="hero__acts" data-rise="140">
+          <a class="btn btn--solid" href="kaucuk-silikon.html"><span class="btn__dot"></span>Kauçuk &amp; silikon ürünler</a>
+          <a class="btn btn--ghost" href="iletisim.html#teklif">Numune veya çizim gönder</a>
+        </div>
+      </div>
+      <div class="kauc__shot" data-rise="80">
+        <img src="assets/img/sahne/kaucuk-silikon.webp" alt="Kalıplı kauçuk parçalar, ekstrüde profiller ve silikon ürünler"
+             loading="lazy" width="1800" height="1344">
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="stage">
+  <div class="wrap">
+    <div class="seam"><span class="tag">Ürünler</span></div>
+    <h2 class="d2" data-rise>Sızdırmazlık hattının tamamı,<br>tek yerden.</h2>
+    <p class="lede" style="margin-top:18px" data-rise="80">Conta ve salmastradan flanşa, kaplin
+      lastiğinden ambar kapak profiline kadar. Listede gezinin, ne olduğunu ve nerede çalıştığını görün.</p>
+    <div class="stage__grid" style="margin-top:clamp(34px,4.4vw,64px)">
+      <ul class="stage__list">{"".join(stage_items)}</ul>
+      <div class="stage__viewport">{"".join(stage_shots)}</div>
+    </div>
+    <p style="margin-top:34px"><a class="btn btn--ghost" href="urunler.html">Tüm ürünleri gör</a></p>
   </div>
 </section>
 
@@ -330,24 +433,10 @@ def page_index():
   </div>
 </section>
 
-<section class="band" id="stage">
-  <div class="wrap">
-    <div class="seam"><span class="tag">Ürünler</span></div>
-    <h2 class="d2" data-rise>Sızdırmazlık hattının tamamı,<br>tek yerden.</h2>
-    <p class="lede" style="margin-top:18px" data-rise="80">Conta ve salmastradan flanşa, kaplin
-      lastiğinden ambar kapak profiline kadar. Listede gezinin, ne olduğunu ve nerede çalıştığını görün.</p>
-    <div class="stage__grid" style="margin-top:clamp(34px,4.4vw,64px)">
-      <ul class="stage__list">{"".join(stage_items)}</ul>
-      <div class="stage__viewport">{"".join(stage_shots)}</div>
-    </div>
-    <p style="margin-top:34px"><a class="btn btn--ghost" href="urunler.html">Tüm ürünleri gör</a></p>
-  </div>
-</section>
-
 <section class="band band--tight">
   <div class="wrap">
     <div class="seam"><span class="tag">Çalıştığı yerler</span></div>
-    <h2 class="d2" data-rise>Aynı conta ailesi, dört ayrı dünyada<br>aynı işi yapar.</h2>
+    <h2 class="d2" data-rise>Aynı sızdırmazlık ailesi, dört ayrı<br>sektörde aynı işi yapar.</h2>
   </div>
   <div class="scenes" style="margin-top:clamp(28px,3.4vw,48px)">{scene_html}</div>
 </section>
@@ -357,14 +446,14 @@ def page_index():
     <div class="seam"><span class="tag">Nasıl çalışıyoruz</span></div>
     <div class="gap-demo">
       <div data-rise>
-        <h2 class="d2">Tuzla'dayız. Yani zaten<br>tersanenin içindeyiz.</h2>
-        <p class="lede" style="margin-top:20px">Bir gemi rıhtımda beklerken conta aramak pahalıdır.
-          İstasyon Mahallesi'ndeki depomuz tersane hattının tam ortasında; stoktaki ürün aynı gün yola çıkar,
-          olmayan ölçü aynı gün kesilir.</p>
+        <h2 class="d2">Stokta varsa bugün,<br>yoksa ölçüsünde üretilir.</h2>
+        <p class="lede" style="margin-top:20px">Duran bir hatta conta aramak pahalıdır. Standart ölçüler
+          depomuzda hazır bekler ve aynı gün yola çıkar; katalogda olmayan ölçü numuneden kesilir,
+          kalıp gerektiren parça çizimden üretilir.</p>
         <p style="margin-top:26px"><a class="btn btn--ghost" href="hakkimizda.html">Firmayı tanıyın</a></p>
       </div>
       <div data-rise="90" style="aspect-ratio:4/3;overflow:hidden">
-        <img src="assets/img/sahne/kurumsal-depo.webp" alt="Tuzla Conta deposunda raflarda duran levha ruloları ve conta kutuları"
+        <img src="assets/img/sahne/kurumsal-depo.webp" alt="Düzenli raflarda levha ruloları, profil makaraları ve ürün kutuları"
              loading="lazy" width="1200" height="900" style="width:100%;height:100%;object-fit:cover">
       </div>
     </div>
@@ -378,7 +467,12 @@ def page_index():
 
 
 def quote_block(rel=""):
-    opts = "".join(f'<option value="{E(CATS[s][0])}">{E(CATS[s][0])}</option>' for s in CATS)
+    # değer ürünün slug'ı: mail tarafı görseli, teknik tabloyu ve ölçüyü buradan bulur
+    opts = "".join(
+        f'<optgroup label="{E(CATS[s][0])}">' + "".join(
+            f'<option value="{p["slug"]}"{" data-olcu=1" if p.get("olcu") else ""}>{E(p["ad"])}</option>'
+            for p in BY_CAT[s]) + "</optgroup>" for s in CATS)
+    dn_opts = "".join(f'<option value="{dn}">DN {dn} — iç {ic} / dış {dis} mm</option>' for dn, ic, dis, *_ in DIN2576)
     return f"""<section class="band" id="teklif">
   <div class="wrap">
     <div class="seam"><span class="tag">Teklif</span></div>
@@ -397,7 +491,7 @@ def quote_block(rel=""):
         <div class="form__row">
           <div class="field"><label for="f-ad">Ad soyad</label>
             <input id="f-ad" name="ad" type="text" autocomplete="name" required></div>
-          <div class="field"><label for="f-firma">Firma veya gemi adı</label>
+          <div class="field"><label for="f-firma">Firma adı</label>
             <input id="f-firma" name="firma" type="text" autocomplete="organization"></div>
         </div>
         <div class="form__row">
@@ -405,11 +499,17 @@ def quote_block(rel=""):
             <input id="f-tel" name="tel" type="tel" inputmode="tel" autocomplete="tel" required></div>
           <div class="field"><label for="f-urun">Aradığınız ürün</label>
             <select id="f-urun" name="urun"><option value="">Seçin</option>{opts}
-              <option value="Emin değilim">Emin değilim, yardım gerekiyor</option></select></div>
+              <option value="emin-degilim">Emin değilim, yardım gerekiyor</option></select></div>
+        </div>
+        <div class="form__row">
+          <div class="field" id="f-dn-wrap" hidden><label for="f-dn">Standart ölçü <span class="hint">DIN 2576 PN16</span></label>
+            <select id="f-dn" name="dn"><option value="">Ölçü seçin</option>{dn_opts}</select></div>
+          <div class="field"><label for="f-adet">Adet <span class="hint">İsteğe bağlı</span></label>
+            <input id="f-adet" name="adet" type="text" inputmode="numeric" placeholder="Örn: 12"></div>
         </div>
         <div class="field">
-          <label for="f-olcu">Ölçü ve adet <span class="hint">Bilmiyorsanız pompanın veya makinenin markasını yazın.</span></label>
-          <textarea id="f-olcu" name="olcu" placeholder="Örn: DN80 PN16 klingrit conta, 2 mm, 12 adet"></textarea>
+          <label for="f-olcu">Ölçü ve açıklama <span class="hint">Bilmiyorsanız pompanın veya makinenin markasını yazın.</span></label>
+          <textarea id="f-olcu" name="olcu" placeholder="Örn: 2 mm kalınlık, iç çap 116, dış çap 220"></textarea>
         </div>
         <div class="form__row">
           <div class="field"><label for="f-acil">Aciliyet</label>
@@ -453,15 +553,15 @@ def page_urunler():
     idx = "".join(f'<a class="btn btn--ghost" href="#{s}" style="padding:9px 16px;font-size:.86rem">{E(CATS[s][0])}</a>'
                   for s in CATS)
     return f"""{head("Ürünler — " + BRAND['short'],
-       "12 grupta 51 kalem: conta, mekanik salmastra, yumuşak salmastra, o-ring, keçe, ambar kapak lastiği, "
-       "levha, kaplin, flanş, takoz, set ve servis ekipmanları.", canon="urunler.html")}
+       f"{NK} grupta {NP} kalem: ambar kapak lastiği, mekanik salmastra, conta, levha, salmastra, o-ring, keçe, "
+       "kaplin, takoz, flanş, set, servis ekipmanları ve kauçuk-silikon özel üretim.", canon="urunler.html")}
 {nav(here="urunler")}
 <main id="main">
 <section class="ph">
   <div class="wrap">
     <div class="crumb"><a href="index.html">Ana sayfa</a><span aria-hidden="true">/</span><span>Ürünler</span></div>
     <h1 class="d1" style="max-width:14ch">Ürünler</h1>
-    <p class="lede" style="margin-top:20px;max-width:52ch">12 ürün grubunda 51 kalem. Ölçü katalogda
+    <p class="lede" style="margin-top:20px;max-width:52ch">{NK} ürün grubunda {NP} kalem. Ölçü katalogda
       yoksa numuneden kesiyoruz; malzemeyi akışkana, sıcaklığa ve basınca göre birlikte seçiyoruz.</p>
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:clamp(26px,3vw,40px)">{idx}</div>
   </div>
@@ -516,7 +616,7 @@ def page_urun(p):
         <h1 class="d2">{E(p['ad'])}</h1>
         <p class="ph__lede">{E(p['ozet'])}</p>
         <div class="ph__acts">
-          <a class="btn btn--solid" href="../iletisim.html#teklif"><span class="btn__dot"></span>Bu ürün için teklif iste</a>
+          <a class="btn btn--solid" href="../iletisim.html?urun={p['slug']}#teklif"><span class="btn__dot"></span>Bu ürün için teklif iste</a>
           <a class="btn btn--ghost" href="tel:{BRAND['phone']}">{BRAND['phone_display']}</a>
         </div>
       </div>
@@ -538,12 +638,13 @@ def page_urun(p):
         <div class="aside-card" style="margin-top:28px">
           <h3>Ölçü katalogda yok mu?</h3>
           <p>Elinizdeki numuneden veya flanş ölçüsünden kesiyoruz. Tek adet de üretiyoruz.</p>
-          <a class="btn btn--solid" href="../iletisim.html#teklif"><span class="btn__dot"></span>Ölçü gönder</a>
+          <a class="btn btn--solid" href="../iletisim.html?urun={p['slug']}#teklif"><span class="btn__dot"></span>Ölçü gönder</a>
         </div>
       </div>
     </div>
   </div>
 </section>
+{olcu_table(p)}
 {rel_html}
 </main>
 <script type="application/ld+json">{_j.dumps(ld, ensure_ascii=False)}</script>
@@ -553,7 +654,7 @@ def page_urun(p):
 # ---------------------------------------------------------------- kurumsal
 def page_hakkimizda():
     return f"""{head("Hakkımızda — " + BRAND['short'],
-       "Tuzla İstasyon Mahallesi'nde, tersane hattının içinde conta ve sızdırmazlık tedarikçisi.",
+       "Conta, salmastra, kauçuk ve silikon sızdırmazlık ürünlerinde stoklu tedarik ve ölçüye özel üretim.",
        canon="hakkimizda.html")}
 {nav(here="hakkimizda")}
 <main id="main">
@@ -561,17 +662,19 @@ def page_hakkimizda():
   <div class="wrap">
     <div class="crumb"><a href="index.html">Ana sayfa</a><span aria-hidden="true">/</span><span>Hakkımızda</span></div>
     <h1 class="d1" style="max-width:16ch">Sızdırmazlık, bizim tek işimiz.</h1>
-    <p class="lede" style="margin-top:22px;max-width:54ch">Tuzla İstasyon Mahallesi'nde, tersanelerin
-      ve gemi tedarik hattının tam ortasındayız. Yaptığımız iş tek cümleyle şu: bir yerden bir şey
-      kaçıyorsa, onu durduracak parçayı doğru malzemeden, doğru ölçüde ve zamanında getirmek.</p>
+    <p class="lede" style="margin-top:22px;max-width:56ch">Fabrikaların, üretim tesislerinin ve gemilerin
+      sızdırmazlık ihtiyacını tek elden karşılıyoruz. Yaptığımız iş tek cümleyle şu: bir yerden bir şey
+      kaçıyorsa, onu durduracak parçayı doğru malzemeden, doğru ölçüde ve zamanında getirmek; katalogda
+      yoksa üretmek.</p>
   </div>
 </section>
 
 <section class="band band--tight" style="padding-top:0">
   <div class="wrap">
-    <div style="aspect-ratio:21/9;overflow:hidden" data-rise>
-      <img src="assets/img/sahne/kurumsal-tezgah.webp" alt="Atölyede levhadan conta kesimi"
-        loading="lazy" width="1600" height="686" style="width:100%;height:100%;object-fit:cover">
+    <div class="about-shot" data-rise>
+      <img src="assets/img/sahne/kurumsal-hakkimizda.webp"
+        alt="Aydınlık, sade bir yüzey üzerinde mekanik salmastra, conta, kauçuk profil, o-ring ve silikon profil"
+        width="2400" height="1018">
     </div>
   </div>
 </section>
@@ -582,26 +685,30 @@ def page_hakkimizda():
       <div>
         <div class="pd__blk">
           <h2>Ne yapıyoruz?</h2>
-          <p>Conta, mekanik salmastra, yumuşak salmastra, o-ring, keçe, kaplin lastiği, flanş, levha,
-            takoz ve gemi ambar kapak grubu ürünlerini stoklayıp tedarik ediyoruz. Katalog ölçüsü
-            yetmediğinde levhadan ve numuneden kesim yapıyoruz.</p>
+          <p>Conta, mekanik salmastra, salmastra, o-ring, keçe, kaplin lastiği, flanş, levha, takoz ve
+            ambar kapak lastiği gruplarında {NP} kalemi stokta tutuyor, standart ölçüleri aynı gün
+            gönderiyoruz. Katalog ölçüsü yetmediğinde levhadan ve numuneden kesim yapıyoruz.</p>
+          <p>Standart ürünlerin yanı sıra, ihtiyaca özel ölçü, formülasyon ve teknik gereksinimlere göre
+            kauçuk ve silikon bazlı contalar, profiller, kalıplı parçalar ve kauçuk-metal birleşimli parçalar
+            üretiyoruz. Numuneden, müşteri çiziminden veya yalnızca bir ölçüden yola çıkıp önce prototip,
+            ardından seri üretim yapıyoruz.</p>
           <p>Mekanik salmastralarda EMU, Flygt, ABS, Alfa Laval, Fristam ve Frick gibi markaların
-            pompalarına birebir uyan muadil çözümler sunuyoruz. Ambar kapak ürünlerimiz IACS
-            standartlarında üretiliyor.</p>
+            pompalarına birebir uyan muadil çözümler sunuyoruz.</p>
         </div>
         <div class="pd__blk">
           <h2>Nasıl çalışıyoruz?</h2>
           <ul class="ticks">
             <li>Önce ne aktığını, kaç derece ve kaç bar olduğunu soruyoruz. Malzeme ondan sonra seçiliyor.</li>
             <li>Ölçü katalogda yoksa numuneden birebir kesiyoruz; tek adet için de üretim yapıyoruz.</li>
-            <li>Stoktaki ürünler Tuzla ve tersane bölgesine aynı gün çıkıyor.</li>
+            <li>Kalıp gerektiren parçada önce prototip çıkarıyor, onaydan sonra seriye geçiyoruz.</li>
+            <li>Stoktaki ürünler aynı gün yola çıkıyor.</li>
             <li>Yanlış malzemeden dolayı tekrarlayan arızalarda ürünü değil, çözümü değiştiriyoruz.</li>
           </ul>
         </div>
         <div class="pd__blk">
           <h2>Kimlerle çalışıyoruz?</h2>
-          <p>Tersaneler, gemi tedarik (ship supply) firmaları, armatörler, liman işletmeleri, pompa ve
-            vana servisleri, enerji santralleri, gıda ve kimya tesisleri ile bakım atölyeleri.</p>
+          <p>Üretim fabrikaları ve makine imalatçıları, gıda, içecek, kimya ve ilaç tesisleri, enerji
+            santralleri, pompa ve vana servisleri, bakım atölyeleri, gemi işletmeleri ve gemi tedarik firmaları.</p>
         </div>
       </div>
       <div>
@@ -610,7 +717,8 @@ def page_hakkimizda():
           <tr><th scope="row">Adres</th><td>{E(BRAND['adres'])}</td></tr>
           <tr><th scope="row">Telefon</th><td>{BRAND['phone_display']}</td></tr>
           <tr><th scope="row">E-posta</th><td>{BRAND['mail']}</td></tr>
-          <tr><th scope="row">Ürün grubu</th><td>12 grup, 51 kalem</td></tr>
+          <tr><th scope="row">Ürün grubu</th><td>{NK} grup, {NP} kalem</td></tr>
+          <tr><th scope="row">Özel üretim</th><td>Kauçuk, silikon, kauçuk-metal</td></tr>
           <tr><th scope="row">Çalışma saatleri</th><td>Hafta içi 08:30 – 18:30<br>Cumartesi 09:00 – 15:00</td></tr>
         </tbody></table>
         <div class="aside-card" style="margin-top:28px">
@@ -627,9 +735,75 @@ def page_hakkimizda():
 {foot()}"""
 
 
+# ---------------------------------------------------------------- kauçuk & silikon
+def page_kaucuk():
+    steps = [("Numune, çizim veya ölçü", "Elinizdeki eski parça, 2D/3D çizim ya da yalnızca birkaç ölçü yeterli."),
+             ("Malzeme ve sertlik", "Akışkana, sıcaklığa, basınca ve aşınmaya göre hamur ve Shore sertliği birlikte seçilir."),
+             ("Kalıp ve prototip", "Kalıp veya ekstrüzyon düzesi hazırlanır, ilk parçalar ölçü ve montaj için onaya sunulur."),
+             ("Seri üretim", "Onaylanan parça aynı kalıpla tekrarlanabilir kalitede, istenen adette üretilir.")]
+    step_html = "".join(f'<li><span class="num">{i+1:02d}</span><b>{E(t)}</b><p>{E(d)}</p></li>'
+                        for i, (t, d) in enumerate(steps))
+    mats = [("EPDM", "Sıcak su, buhar kondensi, ozon ve dış ortam"), ("NBR", "Yağ, yakıt ve hidrolik akışkan"),
+            ("Viton (FKM)", "Yüksek sıcaklıkta yağ, yakıt ve kimyasal"), ("Silikon (VMQ)", "-60 °C … +230 °C, gıda ve ilaç teması"),
+            ("Neopren (CR)", "Hava koşulları, deniz suyu, alev geciktirme"), ("Doğal kauçuk (NR)", "Aşınma, darbe ve yüksek esneklik")]
+    mat_rows = "".join(f'<tr><th scope="row">{E(k)}</th><td>{E(v)}</td></tr>' for k, v in mats)
+    kab = "".join(f"<li>{E(k)}</li>" for k in KABILIYET)
+    ozel = [p for p in P if p["kat"] in ("ozel-kaucuk", "ozel-conta")] + \
+           [BY_SLUG[s] for s in ("kaucuk-conta", "viton-conta", "epdm-sunger-profil") if s in BY_SLUG]
+    cards = "".join(card(p, "") for p in ozel)
+    return f"""{head("Kauçuk & Silikon Ürünler — " + BRAND['short'],
+       "Kauçuk ve silikon bazlı contalar, profiller, kalıplı parçalar ve kauçuk-metal parçalar. "
+       "Numuneden, çizimden veya ölçüden prototip ve seri üretim.", canon="kaucuk-silikon.html")}
+{nav(here="kaucuk")}
+<main id="main">
+<section class="ph">
+  <div class="wrap">
+    <div class="crumb"><a href="index.html">Ana sayfa</a><span aria-hidden="true">/</span><span>Kauçuk &amp; Silikon Ürünler</span></div>
+    <div class="ph__grid">
+      <div>
+        <h1 class="d2">Kauçuk ve silikon bazlı özel ürünlerde üretim çözümü.</h1>
+        <p class="ph__lede" style="max-width:52ch">{E(KAUCUK_LEDE)}</p>
+        <div class="ph__acts">
+          <a class="btn btn--solid" href="iletisim.html#teklif"><span class="btn__dot"></span>Numune veya çizim gönder</a>
+          <a class="btn btn--ghost" href="tel:{BRAND['phone']}">{BRAND['phone_display']}</a>
+        </div>
+      </div>
+      <div class="ph__shot" data-rise>
+        <img src="assets/img/sahne/kaucuk-silikon.webp" alt="Kalıplı kauçuk parçalar, profiller ve silikon ürünler" width="1800" height="1344">
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band band--light">
+  <div class="wrap">
+    <div class="pd">
+      <div>
+        <div class="pd__blk"><h2>Neler üretiyoruz?</h2><ul class="ticks ticks--2">{kab}</ul></div>
+        <div class="pd__blk"><h2>Nasıl üretiyoruz?</h2><ol class="steps">{step_html}</ol></div>
+      </div>
+      <div>
+        <table class="spec"><caption>Malzeme ve kullanım yeri</caption><tbody>{mat_rows}</tbody></table>
+        <p class="note">Sertlik 30 – 90 Shore A aralığında; renkli, gıda uygun ve alev geciktirici hamurlar talebe göre hazırlanır.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band band--tight">
+  <div class="wrap">
+    <div class="seam"><span class="tag">Kauçuk ve silikon ürünler</span></div>
+    <div class="grid">{cards}</div>
+  </div>
+</section>
+{quote_block()}
+</main>
+{foot()}"""
+
+
 def page_iletisim():
     return f"""{head("İletişim — " + BRAND['short'],
-       "Tuzla İstasyon Mahallesi Suyolu Sokak No 3/A. Telefon, WhatsApp ve teklif formu.",
+       "Telefon, WhatsApp ve teklif formu. Ölçü, numune fotoğrafı veya çizim gönderin, aynı gün dönelim.",
        canon="iletisim.html")}
 {nav(here="iletisim")}
 <main id="main">
@@ -645,16 +819,16 @@ def page_iletisim():
   <div class="wrap">
     <div class="scenes" style="margin-bottom:clamp(22px,2.6vw,38px)">
       <a class="scene" href="urunler.html" style="min-height:clamp(230px,26vw,330px)">
-        <img src="assets/img/sahne/uyg-tersane.webp" alt="Tuzla tersane bölgesinde havuzdaki gemi"
+        <img src="assets/img/sahne/kurumsal-depo.webp" alt="Düzenli raflarda levha ruloları ve ürün kutuları"
              loading="lazy" width="1200" height="900">
-        <span class="scene__v"><span class="scene__t">Tersanenin içindeyiz</span>
-          <span class="scene__d">İstasyon Mahallesi, Tuzla. Stoktaki ürün aynı gün yola çıkar.</span></span>
+        <span class="scene__v"><span class="scene__t">Stoktan aynı gün</span>
+          <span class="scene__d">Standart ölçüler depoda hazır; sipariş aynı gün yola çıkar.</span></span>
       </a>
-      <a class="scene" href="hakkimizda.html" style="min-height:clamp(230px,26vw,330px)">
-        <img src="assets/img/sahne/kurumsal-tezgah.webp" alt="Atölyede levhadan conta kesimi"
+      <a class="scene" href="kaucuk-silikon.html" style="min-height:clamp(230px,26vw,330px)">
+        <img src="assets/img/sahne/kat-ozel-conta.webp" alt="CNC kesim tezgâhı yanında özel ölçü contalar"
              loading="lazy" width="1200" height="900">
-        <span class="scene__v"><span class="scene__t">Ölçü yoksa keseriz</span>
-          <span class="scene__d">Numuneyi getirin ya da fotoğrafını gönderin, birebir çıkaralım.</span></span>
+        <span class="scene__v"><span class="scene__t">Ölçü yoksa üretiriz</span>
+          <span class="scene__d">Numuneyi getirin ya da fotoğrafını, çizimini gönderin; birebir çıkaralım.</span></span>
       </a>
     </div>
     <div style="aspect-ratio:21/9;overflow:hidden;border:1px solid var(--line-dark)">
@@ -667,6 +841,33 @@ def page_iletisim():
 {quote_block()}
 </main>
 {foot()}"""
+
+
+# ---------------------------------------------------------------- teklif maili
+def mail_katalog():
+    """api/teklif-gonder.js'in okuduğu katalog özeti ve e-posta görselleri.
+    E-posta istemcilerinin çoğu (Outlook masaüstü dahil) webp göstermez; mail
+    görselleri ayrıca küçük jpg olarak üretilir ve maile gömülü (CID) eklenir."""
+    import json
+    api = os.path.join(os.path.dirname(ROOT), "api")
+    out = os.path.join(api, "_mail")
+    os.makedirs(out, exist_ok=True)
+    data = {"din2576": [list(r) for r in DIN2576], "urunler": {}}
+    for p in P:
+        data["urunler"][p["slug"]] = {"ad": p["ad"], "kat": CATS[p["kat"]][0], "ozet": p["ozet"],
+                                      "teknik": p["teknik"], "olcu": p.get("olcu") or ""}
+        src = os.path.join(ROOT, "assets", "img", "urun", p["slug"] + ".webp")
+        dst = os.path.join(out, p["slug"] + ".jpg")
+        if _PIL and (not os.path.exists(dst) or os.path.getmtime(dst) < os.path.getmtime(src)):
+            im = Image.open(src).convert("RGB")
+            im.resize((1120, round(im.height * 1120 / im.width)), Image.LANCZOS).save(
+                dst, "JPEG", quality=76, optimize=True, progressive=True)
+    live = set(data["urunler"])
+    for f in os.listdir(out):
+        if f.endswith(".jpg") and f[:-4] not in live and not f.startswith("_"):
+            os.remove(os.path.join(out, f))
+    with open(os.path.join(api, "_katalog.json"), "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
 
 
 # ---------------------------------------------------------------- yaz
@@ -683,12 +884,22 @@ if __name__ == "__main__":
     total += write("urunler.html", page_urunler())
     total += write("hakkimizda.html", page_hakkimizda())
     total += write("iletisim.html", page_iletisim())
+    total += write("kaucuk-silikon.html", page_kaucuk())
     for p in P:
         total += write(f"urun/{p['slug']}.html", page_urun(p))
     # robots + sitemap
-    urls = ["", "urunler.html", "hakkimizda.html", "iletisim.html"] + [f"urun/{p['slug']}.html" for p in P]
+    urls = ["", "urunler.html", "kaucuk-silikon.html", "hakkimizda.html", "iletisim.html"] + [f"urun/{p['slug']}.html" for p in P]
     sm = ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
           + "".join(f"<url><loc>https://tuzlaconta.com/{u}</loc></url>" for u in urls) + "</urlset>")
     write("sitemap.xml", sm)
     write("robots.txt", "User-agent: *\nAllow: /\nSitemap: https://tuzlaconta.com/sitemap.xml\n")
-    print(f"{4 + len(P)} sayfa yazıldı, {total//1024} KB")
+    mail_katalog()
+    # katalogdan çıkarılan ürünlerin sayfaları ve görselleri kalmasın
+    live = {p["slug"] for p in P}
+    for f in os.listdir(os.path.join(ROOT, "urun")):
+        if f.endswith(".html") and f[:-5] not in live:
+            os.remove(os.path.join(ROOT, "urun", f)); print("silindi: urun/" + f)
+    for f in os.listdir(os.path.join(ROOT, "assets", "img", "urun")):
+        if f.endswith(".webp") and f[:-5] not in live:
+            os.remove(os.path.join(ROOT, "assets", "img", "urun", f)); print("silindi: img/urun/" + f)
+    print(f"{5 + len(P)} sayfa yazıldı, {total//1024} KB")

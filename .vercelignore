@@ -22,3 +22,7 @@ site/assets/video/hero-4k.mp4
 .git/
 node_modules/
 .DS_Store
+
+# müşteri ekran kayıtları/görüntüleri — yalnızca yerelde
+ScreenRecording_*
+Ekran Resmi *.png

@@ -26,3 +26,7 @@ __pycache__/
 IMG_*.PNG
 *.pdf
 .env*
+
+# müşteri ekran kayıtları/görüntüleri — yalnızca yerelde
+ScreenRecording_*
+Ekran Resmi *.png

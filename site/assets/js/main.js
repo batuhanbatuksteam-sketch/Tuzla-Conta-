@@ -80,32 +80,37 @@
     var sec = $("#hero"); if (!sec) return;
     var cv = $("#heroCanvas", sec), h = $("#heroH", sec), l2 = $("#heroL2", sec);
     var scrim = $(".hero__scrim", sec);
-    var raf = 0;
+    var raf = 0, last = 0;
+    var target = 0, cur = -1;   // scroll oranı ve ekranda gösterilen (yumuşatılmış) oran
 
-    var ctx = null, imgs = [], N = 0, shown = -1, sized = false;
+    var ctx = null, imgs = [], N = 0, sized = false, drawn = -1;
     if (cv && cv.getContext && !reduce) {
       ctx = cv.getContext("2d", { alpha: false });
-      var light = innerWidth < 900 || (navigator.connection || {}).saveData;
+      // Dikey telefon: spiralin merkezine göre kırpılmış dikey kareler.
+      // Yatay telefon/tablet/masaüstü: 16:9 kareler.
+      var portrait = innerWidth < 900 && innerHeight > innerWidth;
+      var light = portrait || (navigator.connection || {}).saveData;
       var pat = cv.getAttribute(light ? "data-seq-m" : "data-seq-d");
       N = parseInt(cv.getAttribute(light ? "data-n-m" : "data-n-d"), 10) || 0;
 
       var pad = function (n) { return n < 10 ? "00" + n : n < 100 ? "0" + n : "" + n; };
+      var ok = function (im) { return im && im.complete && im.naturalWidth; };
       var load = function (i) {
         if (imgs[i]) return;
         var im = new Image();
         im.decoding = "async";
         im.src = pat.replace("%", pad(i + 1));
         imgs[i] = im;
-        im.onload = function () { if (shown < 0) paint(0); };
+        im.onload = function () { drawn = -1; kick(); };
       };
 
       // ilk kare hemen, kalanlar sırayla ve sessizce arkadan
       load(0);
       var queue = 1;
       var pump = function () {
-        var budget = 4;
+        var budget = 6;
         while (queue < N && budget-- > 0) load(queue++);
-        if (queue < N) setTimeout(pump, 120);
+        if (queue < N) setTimeout(pump, 90);
       };
       setTimeout(pump, 60);
 
@@ -116,28 +121,37 @@
         if (w !== cv.width || hh !== cv.height) { cv.width = w; cv.height = hh; sized = true; return true; }
         return false;
       };
-      var paint = function (i) {
-        // istenen kare henüz inmediyse, inmiş en yakın kareyi çiz
-        var im = imgs[i];
-        if (!im || !im.complete || !im.naturalWidth) {
-          var found = -1;
-          for (var d = 1; d < N; d++) {
-            var a = i - d, b = i + d;
-            if (a >= 0 && imgs[a] && imgs[a].complete && imgs[a].naturalWidth) { found = a; break; }
-            if (b < N && imgs[b] && imgs[b].complete && imgs[b].naturalWidth) { found = b; break; }
-          }
-          if (found < 0) return;
-          im = imgs[found]; i = found;
+      var nearest = function (i) {
+        if (ok(imgs[i])) return i;
+        for (var d = 1; d < N; d++) {
+          if (i - d >= 0 && ok(imgs[i - d])) return i - d;
+          if (i + d < N && ok(imgs[i + d])) return i + d;
         }
-        if (!sized) fit();
+        return -1;
+      };
+      var blit = function (im, a) {
         var cw = cv.width, ch = cv.height;
         var s = Math.max(cw / im.naturalWidth, ch / im.naturalHeight);
         var dw = im.naturalWidth * s, dh = im.naturalHeight * s;
+        ctx.globalAlpha = a;
         ctx.drawImage(im, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
-        if (shown < 0) cv.classList.add("on");
-        shown = i;
       };
-      var refit = function () { if (fit()) paint(shown < 0 ? 0 : shown); };
+      // Kare konumu kesirli: f = 12.4 -> 12. kare tam, 13. kare %40 üstüne.
+      // Böylece kare sayısı ne olursa olsun, ekranın her yenilemesinde (120 Hz
+      // ekranda saniyede 120 kez) ara bir görüntü çizilir; hareket basamaksız akar.
+      var paint = function (f) {
+        if (!sized) fit();
+        var i = Math.floor(f), t = f - i;
+        var key = Math.round(f * 64);
+        if (key === drawn) return;
+        var a = nearest(i); if (a < 0) return;
+        blit(imgs[a], 1);
+        if (a === i && t > 0.015 && i + 1 < N && ok(imgs[i + 1])) blit(imgs[i + 1], t);
+        ctx.globalAlpha = 1;
+        if (drawn < 0) cv.classList.add("on");
+        drawn = key;
+      };
+      var refit = function () { if (fit()) { drawn = -1; kick(); } };
       addEventListener("resize", refit);
       addEventListener("orientationchange", refit);
       // Mobilde ilk boyama, açılış perdesi hâlâ üstteyken ve adres çubuğu
@@ -154,13 +168,8 @@
       return Math.min(1, Math.max(0, -r.top / span));
     }
 
-    function tick() {
-      raf = 0;
-      var p = progress();
-      if (ctx && N > 0) {
-        var idx = Math.round(p * (N - 1));
-        if (idx !== shown) paint(idx);
-      }
+    function apply(p) {
+      if (ctx && N > 0) paint(p * (N - 1));
       if (h) {
         // metin bloğu görüntü anına yer bırakarak çekilir
         var out = Math.max(0, (p - 0.55) / 0.35);
@@ -168,7 +177,7 @@
         h.style.transform = "translateY(" + (-out * 46) + "px)";
       }
       if (l2) {
-        // ikinci satır birinciye kapanır — flanşın kapanışıyla aynı hareket
+        // ikinci satır birinciye kapanır — contanın kapanışıyla aynı hareket
         var close = Math.min(1, p / 0.45);
         l2.style.transform = "translateY(" + (1 - close) * 15 + "px)";
       }
@@ -177,11 +186,29 @@
         scrim.style.opacity = String(1 - Math.min(1, Math.max(0, (p - 0.5) / 0.45)) * 0.55);
       }
     }
-    function onScroll() { if (!raf) raf = requestAnimationFrame(tick); }
+
+    // Scroll'un kendisi basamaklıdır (fare tekerleği 100px'lik sıçramalar yapar).
+    // Gösterilen oran hedefe kare hızından bağımsız bir yayla yaklaşır: 60 Hz'de de
+    // 120 Hz'de de aynı sürede oturur, ama 120 Hz'de iki kat ara adım çizilir.
+    function tick(now) {
+      raf = 0;
+      var dt = last ? Math.min(64, now - last) : 16.7;
+      last = now;
+      if (cur < 0) cur = target;
+      var k = 1 - Math.pow(1 - 0.16, dt / 16.7);
+      cur += (target - cur) * k;
+      if (Math.abs(target - cur) < 0.0004) cur = target;
+      apply(cur);
+      if (cur !== target) raf = requestAnimationFrame(tick);
+      else last = 0;
+    }
+    function kick() { if (!raf) raf = requestAnimationFrame(tick); }
+    function onScroll() { target = progress(); kick(); }
     addEventListener("scroll", onScroll, { passive: true });
     addEventListener("resize", onScroll);
-    tick();
+    target = progress(); cur = target; apply(cur);
   }
+
 
   /* --------------------------------------------------- 4. KATALOG SAHNESİ */
   function stage() {
@@ -296,12 +323,34 @@
     var f = $("#quoteForm"); if (!f) return;
     var btn = $("#quoteSend"), wa = $("#quoteWa");
     var ok = $("#quoteOk"), err = $("#quoteErr");
+    var sel = $("#f-urun"), dnWrap = $("#f-dn-wrap"), dn = $("#f-dn");
+
+    // Standart ölçü alanı yalnızca DIN 2576 tablosu olan ürünlerde görünür
+    function dnGoster() {
+      if (!sel || !dnWrap) return;
+      var o = sel.options[sel.selectedIndex];
+      var olculu = !!(o && o.hasAttribute("data-olcu"));
+      dnWrap.hidden = !olculu;
+      if (!olculu && dn) dn.value = "";
+    }
+    if (sel) {
+      // ürün sayfasındaki "Bu ürün için teklif iste" -> ?urun=<slug>
+      var q = (location.search.match(/[?&]urun=([a-z0-9-]+)/) || [])[1];
+      if (q && sel.querySelector('option[value="' + q + '"]')) sel.value = q;
+      sel.addEventListener("change", dnGoster);
+      dnGoster();
+    }
+    function urunAdi() {
+      var o = sel && sel.options[sel.selectedIndex];
+      return o && o.value ? o.textContent : "";
+    }
 
     function topla() {
       var d = new FormData(f);
       return {
         ad: d.get("ad") || "", firma: d.get("firma") || "", tel: d.get("tel") || "",
-        urun: d.get("urun") || "", olcu: d.get("olcu") || "",
+        urun: d.get("urun") || "", dn: d.get("dn") || "", adet: d.get("adet") || "",
+        olcu: d.get("olcu") || "",
         aciliyet: d.get("aciliyet") || "", not: d.get("not") || "",
         website: d.get("website") || ""   // bot tuzağı; insan kullanıcıda hep boş
       };
@@ -309,8 +358,9 @@
     function metin(a) {
       return [
         "Teklif talebi — tuzlaconta.com",
-        "Ad: " + a.ad, "Firma / gemi: " + a.firma, "Telefon: " + a.tel,
-        "Ürün: " + a.urun, "Ölçü / adet: " + a.olcu,
+        "Ad: " + a.ad, "Firma: " + a.firma, "Telefon: " + a.tel,
+        "Ürün: " + urunAdi() + (a.dn ? " — DN " + a.dn + " (DIN 2576 PN16)" : ""),
+        "Adet: " + a.adet, "Ölçü / açıklama: " + a.olcu,
         "Aciliyet: " + a.aciliyet, "Not: " + a.not
       ].join("\n");
     }
@@ -340,7 +390,7 @@
       })
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (j) {
-          if (j && j.ok) { goster(ok); f.reset(); }
+          if (j && j.ok) { goster(ok); f.reset(); dnGoster(); }
           else { goster(err); }
         })
         .catch(function () { goster(err); })

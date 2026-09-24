@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Replicate ile ürün görseli üretir. Tekrar çalıştırılabilir: var olan dosyayı atlar."""
-import json, os, sys, time, random, threading, urllib.request, urllib.error, concurrent.futures as cf
+import json, os, sys, time, random, threading, mimetypes, uuid, urllib.request, urllib.error, concurrent.futures as cf
 
-TOKEN = os.environ["REPLICATE_API_TOKEN"]
+TOKEN = os.environ.get("REPLICATE_API_TOKEN", "")
 MODEL = "google/nano-banana-2"
 _gate = threading.Semaphore(3)
 _lock = threading.Lock()
@@ -46,18 +46,34 @@ def _throttle():
         _last[0] = time.time()
 
 
-def gen(slug, obj, ratio="4:3", res="2K", tries=6):
+def upload(path):
+    """Referans görseli Replicate files API'ye yükler, kalıcı URL döndürür."""
+    b = str(uuid.uuid4())
+    name = os.path.basename(path)
+    ct = mimetypes.guess_type(name)[0] or "application/octet-stream"
+    body = (f"--{b}\r\nContent-Disposition: form-data; name=\"content\"; filename=\"{name}\"\r\n"
+            f"Content-Type: {ct}\r\n\r\n").encode() + open(path, "rb").read() + f"\r\n--{b}--\r\n".encode()
+    req = urllib.request.Request("https://api.replicate.com/v1/files", body,
+        {"Authorization": f"Bearer {TOKEN}", "Content-Type": f"multipart/form-data; boundary={b}"})
+    with urllib.request.urlopen(req, timeout=300) as r:
+        return json.load(r)["urls"]["get"]
+
+
+def gen(slug, obj, ratio="4:3", res="2K", tries=6, refs=(), raw=False):
+    """refs: yerel referans görsel yolları (ürünün gerçek formu için).
+    raw=True: istem ortak reçeteye eklenmeden olduğu gibi gider (düzenleme işleri)."""
     dest = os.path.join(OUT, slug + ".jpg")
     if os.path.exists(dest) and os.path.getsize(dest) > 40000:
         return slug, "atlandi", 0
-    prompt = f"{obj}. {RECIPE}"
+    prompt = obj if raw else f"{obj}. {RECIPE}"
+    inp = {"prompt": prompt, "resolution": res, "aspect_ratio": ratio, "output_format": "jpg"}
+    if refs:
+        inp["image_input"] = [upload(r) for r in refs]
     for t in range(tries):
         try:
             _throttle()
             p = post(f"https://api.replicate.com/v1/models/{MODEL}/predictions",
-                     {"input": {"prompt": prompt, "resolution": res,
-                                "aspect_ratio": ratio, "output_format": "jpg"}},
-                     {"Prefer": "wait=60"})
+                     {"input": inp}, {"Prefer": "wait=60"})
             for _ in range(90):
                 if p["status"] in ("succeeded", "failed", "canceled"):
                     break
@@ -74,6 +90,38 @@ def gen(slug, obj, ratio="4:3", res="2K", tries=6):
                 return slug, f"HATA {e}", 0
             # 429'da giderek artan bekleme
             time.sleep(min(90, (5 * (2 ** t)) + random.uniform(0, 3)))
+
+
+RETOUCH = ("Retouch this studio product photograph. In the upper-left corner there is a visible studio softbox / "
+   "light panel and its bright edge. Remove it completely and continue the seamless dark graphite backdrop there with "
+   "the same smooth falloff as the rest of the background, so that corner is dark and empty. Change nothing else: keep "
+   "the products, their position, shape, materials, reflections, lighting, colours, framing and resolution exactly identical.")
+
+
+def leaks(jpg):
+    """Sol üst köşede zeminden belirgin parlak bir alan (softbox sızıntısı) var mı?"""
+    from PIL import Image, ImageStat
+    g = Image.open(jpg).convert("L")
+    w, h = g.size
+    corner = g.crop((0, 0, int(w * .3), int(h * .3)))
+    return ImageStat.Stat(corner).extrema[0][1] > ImageStat.Stat(g).median[0] + 90
+
+
+def retouch(slug, jpg):
+    """Sızıntıyı modelin kendisine sildirir. Piksel maskesiyle harmanlama denendi:
+    softbox'ın ince kenar çizgisi kalıyor, ürün köşeye taşıyorsa ürünü de yiyor."""
+    return gen(slug, RETOUCH, refs=[jpg], raw=True)
+
+
+def finish(jpg, webp, width=1400):
+    """Üretilen jpg'yi yayın webp'sine çevirir."""
+    from PIL import Image
+    im = Image.open(jpg).convert("RGB")
+    if width and im.width > width:
+        im = im.resize((width, round(im.height * width / im.width)), Image.LANCZOS)
+    im.save(webp, "WEBP", quality=84, method=6)
+    return webp
+
 
 if __name__ == "__main__":
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

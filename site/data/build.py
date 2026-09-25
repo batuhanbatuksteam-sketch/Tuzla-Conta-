@@ -271,7 +271,7 @@ DIAGRAM = """<svg class="joint" viewBox="0 0 660 440" role="img"
 # Her hero üretimi kendi klasöründe (assets/img/hero/<sürüm>/). Aynı dosya adları
 # (d001…) sürümler arasında tekrar kullanılınca tarayıcı önbelleğindeki eski kareler
 # yenilerinin arasına karışıp "flick" atıyordu. Sürüm değişince URL de değişir.
-HERO_VER = "v2"
+HERO_VER = "v3"
 
 
 def seq_count(prefix):

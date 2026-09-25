@@ -25,7 +25,7 @@ site/
 │   ├── img/logo-mark.svg TC monogramı
 │   ├── img/urun/         60 ürün çekimi (webp)
 │   ├── img/sahne/        kategori, kullanım alanı ve kurumsal görseller (webp)
-│   ├── img/hero-seq/     hero kare dizisi: d001–d183 (masaüstü), m001–m122 (dikey telefon)
+│   ├── img/hero/<sürüm>/ hero kare dizisi (sürüm başına ayrı klasör, bkz. build.py HERO_VER)
 │   └── video/            isin-ozu-bg.mp4 ("İşin özü" arka planı)
 │                         hero*.mp4 artık kullanılmıyor — silinebilir
 └── data/                 KAYNAK — siteyle birlikte yayına ÇIKMAZ

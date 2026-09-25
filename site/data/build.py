@@ -123,7 +123,7 @@ def head(title, desc, rel="", cls="", canon=""):
 <meta property="og:description" content="{E(desc)}">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="tr_TR">
-<meta property="og:image" content="https://tuzlaconta.com/{rel}assets/img/sahne/hero-frame.webp">
+<meta property="og:image" content="https://tuzlaconta.com/assets/img/hero/{HERO_VER}/poster.webp">
 <link rel="icon" href="{rel}assets/img/logo.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -268,8 +268,14 @@ DIAGRAM = """<svg class="joint" viewBox="0 0 660 440" role="img"
 
 
 # ---------------------------------------------------------------- ana sayfa
+# Her hero üretimi kendi klasöründe (assets/img/hero/<sürüm>/). Aynı dosya adları
+# (d001…) sürümler arasında tekrar kullanılınca tarayıcı önbelleğindeki eski kareler
+# yenilerinin arasına karışıp "flick" atıyordu. Sürüm değişince URL de değişir.
+HERO_VER = "v2"
+
+
 def seq_count(prefix):
-    d = os.path.join(ROOT, "assets", "img", "hero-seq")
+    d = os.path.join(ROOT, "assets", "img", "hero", HERO_VER)
     return len([f for f in os.listdir(d) if f.startswith(prefix) and f.endswith(".webp")]) if os.path.isdir(d) else 0
 
 
@@ -354,10 +360,10 @@ def page_index():
 <section class="hero" id="hero">
   <div class="hero__stage">
     <div class="hero__media">
-      <img src="assets/img/sahne/hero-frame.webp" alt="" aria-hidden="true">
+      <img src="assets/img/hero/{HERO_VER}/poster.webp" alt="" aria-hidden="true">
       <canvas id="heroCanvas" aria-hidden="true"
-              data-seq-d="assets/img/hero-seq/d%.webp" data-n-d="{nd}"
-              data-seq-m="assets/img/hero-seq/m%.webp" data-n-m="{nm}"></canvas>
+              data-seq-d="assets/img/hero/{HERO_VER}/d%.webp" data-n-d="{nd}"
+              data-seq-m="assets/img/hero/{HERO_VER}/m%.webp" data-n-m="{nm}"></canvas>
     </div>
     <div class="hero__scrim"></div>
     <div class="hero__inner">

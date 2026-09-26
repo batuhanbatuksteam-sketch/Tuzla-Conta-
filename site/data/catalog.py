@@ -12,7 +12,7 @@ BRAND = {
     "mail": "info@tuzlaconta.com",
     "web": "tuzlaconta.com",
     "adres": "İstasyon Mah. Suyolu Sk. No:3/A, 34940 Tuzla / İstanbul",
-    "maps": "https://maps.google.com/?q=İstasyon+Mah.+Suyolu+Sk.+No:3+Tuzla+İstanbul",
+    "maps": "https://www.google.com/maps/search/?api=1&query=%C4%B0stasyon%20Mahallesi%20Su%20Yolu%20Sokak%20No%3A3%2C%2034940%20Tuzla%2F%C4%B0stanbul",
 }
 
 # kategoriler: (slug, ad, tek-cümle tanım, stage görseli için sahne tarifi)
